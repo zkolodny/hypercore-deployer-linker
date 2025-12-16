@@ -6,7 +6,7 @@ import {
     DeterministicProxyFactoryFixture,
     MINIMAL_UUPS_UPGRADEABLE_ADDRESS
 } from "deterministic-proxy-factory/fixtures/DeterministicProxyFactoryFixture.sol";
-import { Test } from "forge-std/Test.sol";
+import { Test, console } from "forge-std/Test.sol";
 import { HyperCoreDeployerLinker } from "src/HyperCoreDeployerLinker.sol";
 
 import { ERC20Upgradeable } from "openzeppelin-contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -58,6 +58,8 @@ contract HyperCoreDeployerLinkerTest is Test, DeployAndLink {
             )
         );
 
+        assertNotEq(deployerInStorageSlot, address(0));
         assertEq(hyperCoreDeployer, deployerInStorageSlot);
+        console.log("deployerInStorageSlot", deployerInStorageSlot);
     }
 }

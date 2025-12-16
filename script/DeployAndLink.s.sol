@@ -48,8 +48,10 @@ contract DeployAndLink is Script {
         );
 
         console.log("newImplementation", newImplementation);
-
+        
+        console.log();
         console.logBytes(upgradeCalldata);
+        console.log();
 
         vm.stopBroadcast();
     }
