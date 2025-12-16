@@ -7,12 +7,7 @@ import { UUPSUpgradeable } from "openzeppelin-contracts-upgradeable/proxy/utils/
 
 contract DeployAndLink is Script {
 
-    function setUp() public { }
-
-    function run() public {
-        vm.createSelectFork(vm.rpcUrl("hyperliquid_evm"));
-        address deployer = vm.envAddress("DEPLOYER");
-        address target = vm.envAddress("TARGET");
+    function run(address admin, address deployer, address target) public {
         address currentImplementation = address(
             uint160(
                 uint256(
@@ -22,17 +17,39 @@ contract DeployAndLink is Script {
                 )
             )
         );
+        console.log("admin", admin);
         console.log("deployer", deployer);
         console.log("target", target);
         console.log("currentImplementation", currentImplementation);
-        vm.startBroadcast(deployer);
+        vm.startBroadcast(admin);
         HyperCoreDeployerLinker impl = new HyperCoreDeployerLinker{ salt: bytes32(0) }();
-        // UUPSUpgradeable(target).upgradeToAndCall(
-        //     address(impl),
-        //     abi.encodeCall(
-        //         HyperCoreDeployerLinker.setDeployerAndUpgradeToAndCall, (deployer, address(impl), "")
-        //     )
-        // );
+        console.log("linkerImpl", address(impl));
+
+        bytes memory upgradeCalldata = abi.encodeWithSelector(
+            UUPSUpgradeable.upgradeToAndCall.selector,
+            address(impl),
+            abi.encodeCall(
+                HyperCoreDeployerLinker.setDeployerAndUpgradeToAndCall, (deployer, address(currentImplementation), "")
+            )
+        );
+
+        (bool success,) = target.call(upgradeCalldata);
+
+        require(success, "failed to upgrade");
+
+        address newImplementation = address(
+            uint160(
+                uint256(
+                    vm.load(
+                        target, 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc
+                    )
+                )
+            )
+        );
+
+        console.log("newImplementation", newImplementation);
+
+        console.logBytes(upgradeCalldata);
 
         vm.stopBroadcast();
     }

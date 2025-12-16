@@ -9,45 +9,55 @@ import {
 import { Test } from "forge-std/Test.sol";
 import { HyperCoreDeployerLinker } from "src/HyperCoreDeployerLinker.sol";
 
-contract HyperCoreDeployerLinkerTest is Test {
+import { ERC20Upgradeable } from "openzeppelin-contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-    HyperCoreDeployerLinker impl;
+import { DeployAndLink } from "../script/DeployAndLink.s.sol";
+
+contract HyperCoreDeployerLinkerTest is Test, DeployAndLink {
+
     address hyperCoreDeployer;
-    address proxy;
+    ERC20Upgradeable cashProxy;
+    address admin;
+    address currentImpl;
+    bytes32 deployerStorageSlot;
 
     event Upgraded(address indexed newImplementation);
 
     function setUp() public {
-        impl = new HyperCoreDeployerLinker();
-        hyperCoreDeployer = makeAddr("hyperCoreDeployer");
-        proxy = DeterministicProxyFactoryFixture.deterministicProxyUUPS(
-            PermissionedSalt.create(address(this), 0), address(impl), ""
+        hyperCoreDeployer = 0x95c3a4730fCE7efb6CAc820033B20925Bed93796;
+        cashProxy = ERC20Upgradeable(0x061Af032cCf1CE35A39b556e0F442bF2DBe1Ed06);
+        admin = 0x79C6631FA15CdA38777FB9DD7a6348bAEe794a4E;
+        deployerStorageSlot = keccak256("HyperCore deployer");
+    }
+
+    function test_upgrade_and_set_variable() public {
+        string memory nameBefore = cashProxy.name();
+        string memory symbolBefore = cashProxy.symbol();
+        uint256 totalSupplyBefore = cashProxy.totalSupply();
+        uint256 decimalsBefore = cashProxy.decimals();
+        
+        run(admin, hyperCoreDeployer, address(cashProxy));
+
+        string memory nameAfter = cashProxy.name();
+        string memory symbolAfter = cashProxy.symbol();
+        uint256 totalSupplyAfter = cashProxy.totalSupply();
+        uint256 decimalsAfter = cashProxy.decimals();
+
+        assertEq(nameBefore, nameAfter);
+        assertEq(symbolBefore, symbolAfter);
+        assertEq(totalSupplyBefore, totalSupplyAfter);
+        assertEq(decimalsBefore, decimalsAfter);
+
+        address deployerInStorageSlot = address(
+            uint160(
+                uint256(
+                    vm.load(
+                        address(cashProxy), deployerStorageSlot
+                    )
+                )
+            )
         );
+
+        assertEq(hyperCoreDeployer, deployerInStorageSlot);
     }
-
-    function test_setDeployerAndUpgradeToAndCall_emitsHyperCoreDeployerSet() public {
-        vm.expectEmit(true, false, false, false);
-        emit HyperCoreDeployerLinker.HyperCoreDeployerSet(hyperCoreDeployer);
-
-        HyperCoreDeployerLinker(proxy)
-            .setDeployerAndUpgradeToAndCall(hyperCoreDeployer, address(impl), "");
-    }
-
-    function testFuzz_setDeployerAndUpgradeToAndCall_emitsHyperCoreDeployerSet(address deployer)
-        public
-    {
-        vm.assume(deployer != address(0));
-        address newImplementation = address(new HyperCoreDeployerLinker());
-
-        vm.expectEmit(true, false, false, false);
-        emit HyperCoreDeployerLinker.HyperCoreDeployerSet(deployer);
-
-        vm.expectEmit(true, true, true, true);
-        emit Upgraded(newImplementation);
-
-        HyperCoreDeployerLinker(proxy)
-            .setDeployerAndUpgradeToAndCall(deployer, newImplementation, "");
-    }
-
 }
-
