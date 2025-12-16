@@ -20,6 +20,7 @@ contract HyperCoreDeployerLinkerTest is Test, DeployAndLink {
     address admin;
     address currentImpl;
     bytes32 deployerStorageSlot;
+    address linkerImpl;
 
     event Upgraded(address indexed newImplementation);
 
@@ -28,6 +29,7 @@ contract HyperCoreDeployerLinkerTest is Test, DeployAndLink {
         cashProxy = ERC20Upgradeable(0x061Af032cCf1CE35A39b556e0F442bF2DBe1Ed06);
         admin = 0x79C6631FA15CdA38777FB9DD7a6348bAEe794a4E;
         deployerStorageSlot = keccak256("HyperCore deployer");
+        linkerImpl = 0x8354D80EeA9978Faa04c3b36771c1e8b9c3e9058;
     }
 
     function test_upgrade_and_set_variable() public {
@@ -36,7 +38,7 @@ contract HyperCoreDeployerLinkerTest is Test, DeployAndLink {
         uint256 totalSupplyBefore = cashProxy.totalSupply();
         uint256 decimalsBefore = cashProxy.decimals();
         
-        run(admin, hyperCoreDeployer, address(cashProxy));
+        run(admin, hyperCoreDeployer, address(cashProxy), linkerImpl);
 
         string memory nameAfter = cashProxy.name();
         string memory symbolAfter = cashProxy.symbol();

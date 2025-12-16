@@ -7,7 +7,7 @@ import { UUPSUpgradeable } from "openzeppelin-contracts-upgradeable/proxy/utils/
 
 contract DeployAndLink is Script {
 
-    function run(address admin, address deployer, address target) public {
+    function run(address admin, address deployer, address target, address linkerImpl) public {
         address currentImplementation = address(
             uint160(
                 uint256(
@@ -22,12 +22,12 @@ contract DeployAndLink is Script {
         console.log("target", target);
         console.log("currentImplementation", currentImplementation);
         vm.startBroadcast(admin);
-        HyperCoreDeployerLinker impl = new HyperCoreDeployerLinker{ salt: bytes32(0) }();
-        console.log("linkerImpl", address(impl));
+        // HyperCoreDeployerLinker impl = HyperCoreDeployerLinker(0x8354D80EeA9978Faa04c3b36771c1e8b9c3e9058);
+        console.log("linkerImpl", linkerImpl);
 
         bytes memory upgradeCalldata = abi.encodeWithSelector(
             UUPSUpgradeable.upgradeToAndCall.selector,
-            address(impl),
+            linkerImpl,
             abi.encodeCall(
                 HyperCoreDeployerLinker.setDeployerAndUpgradeToAndCall, (deployer, address(currentImplementation), "")
             )
